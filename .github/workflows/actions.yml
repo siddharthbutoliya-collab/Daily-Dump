@@ -24,7 +24,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Execute Scheduling.py safely
+      - name: Execute Dump.py safely
         env:
           PRABHAT_SECRET_KEY: ${{ secrets.PRABHAT_SECRET_KEY }}
           SERVICE_ACCOUNT_JSON: ${{ secrets.SERVICE_ACCOUNT_JSON }}
@@ -46,7 +46,7 @@ jobs:
           fi
 
           touch $LOCK_FILE
-          echo "🚀 Running Scheduling.py..."
+          echo "🚀 Running Dump.py..."
           
           python Scheduling.py
           EXIT_CODE=$?
