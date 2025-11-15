@@ -30,7 +30,7 @@ jobs:
           SERVICE_ACCOUNT_JSON: ${{ secrets.SERVICE_ACCOUNT_JSON }}
           USERNAME: ${{ secrets.USERNAME }}
           METABASE_URL: ${{ secrets.METABASE_URL }}
-          Daily_Dump_Query: ${{ secrets.Daily_Dump_Query }}
+          DAILY_DUMP_QUERY: ${{ secrets.DAILY_DUMP_QUERY }}
           SHEET_ACCESS_KEY: ${{ secrets.SHEET_ACCESS_KEY }}
 
         run: |
