@@ -32,7 +32,7 @@ jobs:
           METABASE_URL: ${{ secrets.METABASE_URL }}
           # FUNNEL_QUERY: ${{ secrets.FUNNEL_QUERY }}
           # INPUT_QUERY: ${{ secrets.INPUT_QUERY }}
-          # CREATEDON_QUERY: ${{ secrets.CREATEDON_QUERY }}
+          Daily_Dump_Query: ${{ secrets.Daily_Dump_Query }}
           SHEET_ACCESS_KEY: ${{ secrets.SHEET_ACCESS_KEY }}
 
         run: |
