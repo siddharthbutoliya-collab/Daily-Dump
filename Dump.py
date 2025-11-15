@@ -18,7 +18,7 @@ service_account_json = os.getenv("SERVICE_ACCOUNT_JSON")
 MB_URl = os.getenv("METABASE_URL")
 QUERY_URL = os.getenv("DAILY_DUMP_QUERY")
 SAK = os.getenv("SHEET_ACCESS_KEY")
-TARGET_SHEET = "Daily Active Dump"
+TARGET_SHEET = "Dump"
 
 if not sec or not service_account_json:
     raise ValueError("❌ Missing environment variables. Check GitHub secrets.")
