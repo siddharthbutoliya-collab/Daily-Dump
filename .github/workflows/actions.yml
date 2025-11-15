@@ -46,7 +46,7 @@ jobs:
           touch $LOCK_FILE
           echo "🚀 Running Dump.py..."
           
-          python dump.py
+          python Dump.py
           EXIT_CODE=$?
 
           rm -f $LOCK_FILE
