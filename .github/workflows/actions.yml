@@ -24,7 +24,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Execute dump.py safely
+      - name: Execute Dump.py safely
         env:
           PRABHAT_SECRET_KEY: ${{ secrets.PRABHAT_SECRET_KEY }}
           SERVICE_ACCOUNT_JSON: ${{ secrets.SERVICE_ACCOUNT_JSON }}
@@ -44,7 +44,7 @@ jobs:
           fi
 
           touch $LOCK_FILE
-          echo "🚀 Running dump.py..."
+          echo "🚀 Running Dump.py..."
           
           python dump.py
           EXIT_CODE=$?
