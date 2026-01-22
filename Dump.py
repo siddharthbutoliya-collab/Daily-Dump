@@ -61,7 +61,7 @@ print("⏳ Fetching Metabase data...")
 response = fetch_with_retry(QUERY_URL, METABASE_HEADERS)
 df = pd.DataFrame(response.json())
 
-df["Dump Date"] = datetime.now().strftime("%d/%m/%Y")
+# df["Dump Date"] = datetime.now().strftime("%d/%m/%Y")
 print(f"📊 Rows fetched: {len(df)}")
 
 # -------------------- APPEND SHEET --------------------
