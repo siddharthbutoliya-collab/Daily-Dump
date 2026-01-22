@@ -37,27 +37,13 @@ required_vars = [
     SHEET_ACCESS_KEY
 ]
 
-missing = [name for name, val in zip(
-    [
-        "PRABHAT_SECRET_KEY",
-        "USERNAME",
-        "SERVICE_ACCOUNT_JSON",
-        "METABASE_URL",
-        "DAILY_DUMP_QUERY",
-        "DS_ALL_LEAD_STAGES_DOD",
-        "SHEET_ACCESS_KEY"
-    ],
-    required_vars
-) if not val]
-
-if missing:
-    raise ValueError(f"❌ Missing environment variables: {missing}")
+if not all(required_vars):
+    raise ValueError("❌ Missing environment variables. Check GitHub Secrets.")
 
 # ======================================================
 # GOOGLE SHEETS AUTH
 # ======================================================
 service_info = json.loads(SERVICE_ACCOUNT_JSON)
-
 creds = Credentials.from_service_account_info(
     service_info,
     scopes=[
@@ -65,7 +51,6 @@ creds = Credentials.from_service_account_info(
         "https://www.googleapis.com/auth/drive"
     ]
 )
-
 gc = gspread.authorize(creds)
 
 # ======================================================
@@ -80,8 +65,8 @@ res = requests.post(
     timeout=60
 )
 res.raise_for_status()
-
 METABASE_HEADERS["X-Metabase-Session"] = res.json()["id"]
+
 print("✅ Metabase session created")
 
 # ======================================================
@@ -102,14 +87,14 @@ def fetch_with_retry(url, headers, retries=5, delay=15):
 
 
 def append_dataframe(worksheet, df):
-    """Append-only logic for Daily Active Dump"""
+    """Append-only for Daily Active Dump"""
     if df.empty:
         print(f"⚠️ No data for {worksheet.title}")
         return
 
-    existing = worksheet.get_all_values()
+    existing_data = worksheet.get_all_values()
 
-    if not existing:
+    if len(existing_data) == 0:
         set_with_dataframe(
             worksheet,
             df,
@@ -118,48 +103,34 @@ def append_dataframe(worksheet, df):
         )
         print(f"📝 First write to {worksheet.title}")
     else:
-        start_row = len(existing) + 1
-        worksheet.update(
-            f"A{start_row}",
-            df.values.tolist()
-        )
+        start_row = len(existing_data) + 1
+        worksheet.update(f"A{start_row}", df.values.tolist())
         print(f"➕ Appended {len(df)} rows to {worksheet.title}")
 
 
-def overwrite_dataframe_preserve_formulas(
-    worksheet,
-    df,
-    data_start_col="A",
-    data_end_col="C"
-):
+def overwrite_dataframe_preserve_formulas(worksheet, df, end_col="C"):
     """
-    Overwrites ONLY raw data columns (A–C).
-    Preserves XLOOKUP / formulas from column D onwards.
+    Overwrites ONLY columns A–C
+    Preserves formulas in column D onward
     """
+    print(f"🔄 Overwriting data columns A–{end_col} in {worksheet.title}")
 
-    print(f"🔄 Refreshing raw data in {worksheet.title}")
+    worksheet.batch_clear([f"A:{end_col}"])
+    time.sleep(2)
 
     if df.empty:
         print(f"⚠️ No data for {worksheet.title}")
         return
 
-    total_rows = len(df) + 1  # header included
-    clear_range = f"{data_start_col}1:{data_end_col}{total_rows}"
-
-    # Clear only raw data columns
-    worksheet.batch_clear([clear_range])
-    time.sleep(2)
-
-    # Write header + values
     worksheet.update(
-        f"{data_start_col}1",
+        "A1",
         [df.columns.tolist()] + df.values.tolist()
     )
 
-    print("✅ Data refreshed — formulas preserved")
+    print(f"✅ Fresh numeric data written to {worksheet.title}")
 
 # ======================================================
-# OPEN GOOGLE SHEET
+# GOOGLE SHEET HANDLE
 # ======================================================
 sheet = gc.open_by_key(SHEET_ACCESS_KEY)
 
@@ -175,20 +146,23 @@ ws_daily = sheet.worksheet(DAILY_DUMP_SHEET)
 append_dataframe(ws_daily, df_daily)
 
 # ======================================================
-# 2️⃣ DS ALL LEAD STAGES MTD (SAFE OVERWRITE A–C)
+# 2️⃣ DS ALL LEAD STAGES MTD (OVERWRITE A–C ONLY)
 # ======================================================
 print("⏳ Fetching DS All Lead Stages MTD data...")
 resp_ds = fetch_with_retry(DS_ALL_LEAD_STAGES_DOD, METABASE_HEADERS)
 df_ds = pd.DataFrame(resp_ds.json())
+
+# 🔑 CRITICAL FIX — ensure numeric column
+df_ds["total_people"] = (
+    pd.to_numeric(df_ds["total_people"], errors="coerce")
+    .fillna(0)
+    .astype(int)
+)
+
 print(f"📊 DS MTD rows: {len(df_ds)}")
 
 ws_ds = sheet.worksheet(DS_MTD_SHEET)
-overwrite_dataframe_preserve_formulas(
-    worksheet=ws_ds,
-    df=df_ds,
-    data_start_col="A",
-    data_end_col="C"  # 👈 XLOOKUP starts from column D
-)
+overwrite_dataframe_preserve_formulas(ws_ds, df_ds, end_col="C")
 
 # ======================================================
 # TIMER SUMMARY
